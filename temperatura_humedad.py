@@ -2,13 +2,13 @@ from machine import Pin, I2C
 import time
 
 # --- 1. Configuración de Pines ---
-i2c = I2C(0, scl=Pin(22), sda=Pin(21))
+i2c = I2C(0, scl=Pin(19), sda=Pin(18))
 sensor_addr = 0x44
 
 # Relés
-rele_calefactor = Pin(25, Pin.OUT)   # IN2 (12V) - NC
-rele_nebulizador = Pin(26, Pin.OUT)  # IN1 (5V)  - NO
-ven_entrada = Pin(32, Pin.OUT)       # LED Rojo
+rele_calefactor = Pin(32, Pin.OUT)   # IN2 (12V) - NC
+rele_nebulizador = Pin(15, Pin.OUT)  # IN1 (5V)  - NO
+ven_entrada = Pin(25, Pin.OUT)       # LED Rojo
 ven_salida = Pin(33, Pin.OUT)        # LED Azul
 
 # --- CONFIGURACIÓN INICIAL (LÓGICA INVERSA) ---
