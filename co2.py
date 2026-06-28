@@ -3,14 +3,14 @@ import time
 import math
 
 class SensorCO2:
-    def __init__(self, pin_sensor, pin_vent1, pin_vent2, umbral_inicial=25.0):
+    def __init__(self, pin_sensor, pin_vent1=None, pin_vent2=None, umbral_inicial=25.0):
         # Hardware
         self.sensor = ADC(Pin(pin_sensor))
         self.sensor.atten(ADC.ATTN_11DB)
         self.sensor.width(ADC.WIDTH_12BIT)
         
-        self.vent1 = Pin(pin_vent1, Pin.OUT)
-        self.vent2 = Pin(pin_vent2, Pin.OUT)
+        self.vent1 = pin_vent1
+        self.vent2 = pin_vent2
         self.vent1.value(1)  # Apagado (HIGH = OFF)
         self.vent2.value(1)
         
@@ -49,7 +49,7 @@ class SensorCO2:
         # Calentamiento inicial
         if self.estado_actual == "Estabilizando":
             if time.ticks_diff(tiempo_actual, self.inicio_calentamiento) >= 10000: #MODIFICAR TIEMPO DEPENDIENDO DE CALIBRACION
-                self.estado_actual = "Normal"
+                self.estado_actual = "C02 ESTABLE"
                 print("-> [CO2] Calentamiento finalizado. Monitoreo activo.")
             return None
 
@@ -64,11 +64,13 @@ class SensorCO2:
                 self.vent1.value(0)  # LOW = relé ON
                 self.vent2.value(0)
                 self.ventilador_on = True
+                self.estado_actual = "C02 ALTO"
                 print(f">>> VENTILADOR ENCENDIDO (CO2: {ppm} ppm >= Umbral: {self.umbral_ventilacion}) <<<")
             elif ppm < self.umbral_ventilacion and self.ventilador_on:
                 self.vent1.value(1)  # HIGH = relé OFF
                 self.vent2.value(1)  
                 self.ventilador_on = False
+                self.estado_actual = "C02 ESTABLE"
                 print(f">>> VENTILADOR APAGADO (CO2: {ppm} ppm < Umbral: {self.umbral_ventilacion}) <<<")
                 
             self.ultimo_muestreo = tiempo_actual
