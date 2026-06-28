@@ -11,6 +11,7 @@ class Luces:
         # Iniciamos directo en la etapa de incubación
         self.etapa = "incubacion"
         self.inicio_incubacion = time.ticks_ms() + tiempoDeCalibracion
+        self.inicio_fructificacion = time.ticks_ms() 
 
     def actualizar(self):
         tiempo_actual = time.ticks_ms()
@@ -23,8 +24,9 @@ class Luces:
             
             # Simulamos 10 segundos de incubación de forma no bloqueante
             # (El while True principal sigue corriendo libremente mientras se cumple este tiempo)
-            if time.ticks_diff(tiempo_actual, self.inicio_incubacion) >= 10000:  #EDITAR EL TIEMPO DE INCUBACION
+            if time.ticks_diff(tiempo_actual, self.inicio_incubacion) >= 20000 :  #EDITAR EL TIEMPO DE INCUBACION
                 self.etapa = "fructificacion"
+                self.inicio_fructificacion = time.ticks_ms() # ACTUALIZA EL TIEMPO DE INICIO DE FRUCTIFICACION
                 self.ultimo_cambio = tiempo_actual # Sincroniza el reloj para el parpadeo
                 print("--- PASANDO A ETAPA DE FRUCTIFICACIÓN ---")
         
@@ -43,10 +45,16 @@ class Luces:
                     print("LED apagado (Fructificación)")
                     
                 self.ultimo_cambio = tiempo_actual
+                
+            if time.ticks_diff(tiempo_actual, self.inicio_fructificacion) >= 20000: #TERMINACION DE TIEMPO DE FRUCTIFICACION EDITAR CUANDO SE CALIBRE
+                self.etapa = "final"
+                
     
     def obtener_etapa(self):
         if self.etapa == "incubacion":
             return "INCUBACION"
+        elif self.etapa == "final":
+            return "final"
         else:
             return "FRUCTIFICACION"
 
