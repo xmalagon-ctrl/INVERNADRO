@@ -13,7 +13,7 @@ class Pantalla:
         self.lcd = None
     
     def configuracion(self):
-        self.i2c = I2C(0, scl=Pin(self.scl), sda=Pin(self.sda), freq=400000)
+        self.i2c = I2C(1, scl=Pin(self.scl), sda=Pin(self.sda), freq=400000)
         print("Escaneando bus I2C...")
         direcciones = self.i2c.scan()
         if not direcciones:
