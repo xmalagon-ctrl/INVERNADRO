@@ -13,9 +13,9 @@ def fotoResistor():
     #print(f"LDR: {valor_1}, {valor_2}, {valor_3}")#SOLO DESCOMENTAR EN  CASOS ESPECIFICOS, PARA QUE NO SE ESTE IMPRIMIENDO TANTA INFORMACION EN CONSOLA
     #SE DEBE MODIFICAR EL RANGO DE OSCURIDAD, DEPENDIENDO DE CALIBRACION EN CAJA
     if valor_1 <= 1500 and valor_2 <= 1500: # ESTA OSCURO 
-        return "Luces Apagadas"
+        return "LUCES: OFF"
     else:
-        return "Luces Encendidas"
+        return "LUCE: ON"
         
 
 # PINES
@@ -27,6 +27,9 @@ ldr_2= ADC (Pin(27))
 #PANTALLA
 scl_pan = 22
 sda_pan = 21
+#SENSOR DE TEM Y HUM
+scl_clima = 5  
+sda_clima = 4
 #VENTILADORES
 ven_entrada_global = Pin(25, Pin.OUT)
 ven_salida_global = Pin(33, Pin.OUT)
@@ -44,7 +47,7 @@ sistema_pantalla = Pantalla( scl_pan, sda_pan)
 sistema_iluminacion = Luces(led, luces_led, 10000) #SE DEBE DE EDITAR EL TIEMPO DE CALIBRACION PARA QUE LAS ETAPAS INICIEN SOLO CUANDO TERMINE DE CALIBRAR EL INVERNADERO
 #SE DEBE MODIFICAR UMBRAL INICIAL, DEPENDIENDO DE CALIBRACION EN CAJA
 sistema_co2 = SensorCO2(pin_sensor=35,pin_vent1=ven_entrada_global, pin_vent2=ven_salida_global, umbral_inicial=25.0)
-sistema_clima = Tem_Hum(scl_clima=19, sda_clima=18, ven_entrada =ven_entrada_global, ven_salida = ven_salida_global, rele_calefactor =calefactor, rele_nebulizador = nebulizador)
+sistema_clima = Tem_Hum(scl_clima=scl_clima, sda_clima=sda_clima, ven_entrada =ven_entrada_global, ven_salida = ven_salida_global, rele_calefactor =calefactor, rele_nebulizador = nebulizador)
 
 
 
@@ -79,8 +82,8 @@ while True:
     
     #HASTA QUE NO TERMINE DE CALIBRAR NO EMPIEZA LAS ETAPAS
     if sistema_co2.estado_actual == "Estabilizando": 
-        # Actualizar pantalla de calibración de forma no bloqueante cada 1 segundo
-        if time.ticks_diff(time.ticks_ms(), ultimo_tiempo_pantalla) >= 1000: #SE PUEDE MODIFICAR CUANDO SE HAGA CALIBRACIONES
+        # Actualizar pantalla de calibración de forma no bloqueante
+        if time.ticks_diff(time.ticks_ms(), ultimo_tiempo_pantalla) >= 2000: #SE PUEDE MODIFICAR CUANDO SE HAGA CALIBRACIONES
             sistema_pantalla.mostrarEnPantalla(0, "", 0, "CALIBRANDO...", 0, "INVERNADERO", 0, "")      
             ultimo_tiempo_pantalla = time.ticks_ms()    
     else:
@@ -93,10 +96,10 @@ while True:
         if "incubacion" in etapa:
             sistema_co2.cambiar_umbral(25.0)  #EDITAR UMBRAL DEPENDIENDO DE CALIBRACION Y DE ETAPA
             #EDITAR CLIMA DEPENDIENDO DE CALIBRACION, ORDEN:t_min, t_max, h_min, h_max
-            sistema_clima.cambiar_limites(24.0, 26.0, 80.0, 85.0)
+            sistema_clima.cambiar_limites(15.5, 18.5, 40.0, 50.0)
             
             # CHOQUE DE PRIORIDAD EN CO2 Y TEM_HUM YA QUE LOS DOS INTERFIEREN CON LOS VENTILADORES PUEDE TENER UN CHOQUE
-            if est_t == "ENFRIANDO" or est_h == "ALTA" or (estado_Co2  == "C02 ALTO"):
+            if est_t == "ENF" or est_h == "ALTA" or (estado_Co2  == "C02 ALTO"):
                 ven_entrada_global.value(0) # Se encienden si CUALQUIERA de los dos lo necesita
                 ven_salida_global.value(0)
             else:
@@ -106,12 +109,12 @@ while True:
         elif "fructificacion" in etapa:
             sistema_co2.cambiar_umbral(20.0)  #EDITAR UMBRAL DEPENDIENDO DE CALIBRACION Y DE ETAPA
             #EDITAR CLIMA DEPENDIENDO DE CALIBRACION, ORDEN:t_min, t_max, h_min, h_max
-            sistema_clima.cambiar_limites(15.5, 18.5, 87.0, 93.0)
+            sistema_clima.cambiar_limites(15.5, 18.5, 30.0, 50.0)
             
             
             
              # CHOQUE DE PRIORIDAD  CON VENTILADORES
-            if est_t == "ENFRIANDO" or est_h == "ALTA"or (estado_Co2  == "C02 ALTO"):
+            if est_t == "ENF" or est_h == "ALTA"or (estado_Co2  == "C02 ALTO"):
                 ven_entrada_global.value(0) # Se encienden si CUALQUIERA de los dos lo necesita
                 ven_salida_global.value(0)
             else:
@@ -120,7 +123,7 @@ while True:
            
            
         #IMRESION EN PANTALLA (Cada 500ms)
-        if time.ticks_diff(time.ticks_ms(), ultimo_tiempo_pantalla) >= 500:
+        if time.ticks_diff(time.ticks_ms(), ultimo_tiempo_pantalla) >= 2000:
             if "final" in etapa:
                 #SE APAGA TODO
                 ven_entrada_global.value(1) 
@@ -133,9 +136,18 @@ while True:
                 break #ROMPE EL BUCLE PRINCIPAL
             else:
                 # Fila 1: etapa | Fila 2: estado_luces | Fila 3: clima_actual | Fila 4: ppm_actual
-                sistema_pantalla.mostrarEnPantalla(0, etapa, 0, estado_luces, 0,"T:{est_t}  H:{est_h}", 0, estado_Co2)
+                sistema_pantalla.mostrarEnPantalla(0, f"{etapa}", 0, f"{estado_luces}", 0,f"T:{est_t} H:{est_h}", 0, f"{estado_Co2}")
+                '''
+                print("Fila 1:", etapa)
+                print("Fila 2:", estado_luces)
+                print("Fila 3:", f"T:{est_t} H:{est_h}")
+                print("Fila 4:", estado_Co2)
+                '''
                 ultimo_tiempo_pantalla = time.ticks_ms() # Reinicia el temporizador de la pantalla
+                
            
     #SOLO DESCOMENTAR EN  CASOS ESPECIFICOS, PARA QUE NO SE ESTE IMPRIMIENDO TANTA INFORMACION EN CONSOLA
-    print(f"{estado_Co2} ,{ppm_actual} | H: {est_h}, {humedad} |T: {est_t}, {temperatura}")    
+    #print(f"{estado_Co2} ,{ppm_actual} | H: {est_h}, {humedad} |T: {est_t}, {temperatura}")
+
     time.sleep_ms(10)
+    
