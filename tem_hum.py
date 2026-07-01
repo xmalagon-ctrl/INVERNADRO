@@ -2,7 +2,7 @@ from machine import Pin, I2C
 import time
 
 class Tem_Hum:
-    def __init__(self, scl_clima=19, sda_clima=18, ven_entrada =None, ven_salida = None, rele_calefactor = None, rele_nebulizador = None, address=0x44 ):
+    def __init__(self, scl_clima=5, sda_clima=4, ven_entrada =None, ven_salida = None, rele_calefactor = None, rele_nebulizador = None, address=0x44 ):
         # Configuración I2C para el SHT3x
         self.i2c = I2C(0, scl=Pin(scl_clima), sda=Pin(sda_clima))
         self.sensor_addr = address
@@ -67,8 +67,8 @@ class Tem_Hum:
         
         if self.estado_h == "Inicializando" and self.estado_t == "Inicializando":
             if time.ticks_diff(tiempo_actual, self.inicio_calentamiento) >= 10000: #MODIFICAR TIEMPO DEPENDIENDO DE CALIBRACION
-                self.estado_h = "IDEAL"
-                self.estado_t = "IDEAL"
+                self.estado_h = "OK"
+                self.estado_t = "OK"
             return self.temperatura_actual, self.humedad_actual, self.estado_t, self.estado_h
         
         # Monitoreo activo cada 2 segundos
@@ -86,22 +86,22 @@ class Tem_Hum:
                     self.rele_calefactor.value(0) # ENCENDIDO
                     self.ven_entrada.value(0)
                     self.ven_salida.value(1)
-                    self.estado_t = "CALENTANDO"
+                    self.estado_t = "CAL"
                 elif t > self.t_max:
                     self.rele_calefactor.value(1) # APAGADO
                     self.ven_entrada.value(0)
                     self.ven_salida.value(0)
-                    self.estado_t = "ENFRIANDO"
+                    self.estado_t = "ENF"
                 else:
                     self.rele_calefactor.value(1)
                     self.ven_entrada.value(1)
                     self.ven_salida.value(1)
-                    self.estado_t = "IDEAL"
+                    self.estado_t = "OK"
 
                 # --- Lógica de Control de Humedad ---
                 if h < self.h_min:
                     self.rele_nebulizador.value(0) # ENCENDIDO
-                    self.estado_h = "ACTIVA"
+                    self.estado_h = "ACT"
                 elif h > self.h_max:
                     self.rele_nebulizador.value(1) # APAGADO
                     self.ven_entrada.value(0)
@@ -109,8 +109,9 @@ class Tem_Hum:
                     self.estado_h = "ALTA"
                 else:
                     self.rele_nebulizador.value(1)
-                    self.estado_h = "IDEAL"
+                    self.estado_h = "OK"
                     
                     
         return self.temperatura_actual, self.humedad_actual, self.estado_t, self.estado_h
                     
+        
